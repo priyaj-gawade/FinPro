@@ -1,0 +1,8 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Black left half circle -->
+  <path d="M150 0 A150 150 0 0 0 150 300" fill="black" />
+  <!-- Yellow top right quarter circle -->
+  <path d="M150 0 A150 150 0 0 1 300 150" fill="#ffcc00" />
+  <!-- Black bottom right quarter circle -->
+  <path d="M300 150 A150 150 0 0 1 150 300" fill="black" />
+</svg>
