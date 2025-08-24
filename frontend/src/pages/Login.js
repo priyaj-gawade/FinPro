@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import EmailVerification from '../components/EmailVerification';
 import {
   Container,
   Box,
@@ -12,14 +13,18 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { AccountBalance as AccountBalanceIcon } from '@mui/icons-material';
+import { useTranslation } from '../i18n/i18n';
 
 const Login = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requiresVerification, setRequiresVerification] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   const { login, error } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -40,14 +45,31 @@ const Login = () => {
 
     try {
       setIsSubmitting(true);
-      await login(formData);
-      navigate('/dashboard');
+      const response = await login(formData);
+      
+      if (response && response.requiresVerification) {
+        setUserEmail(formData.email);
+        setRequiresVerification(true);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setFormError(err.response?.data?.message || 'Login failed');
     } finally {
       setIsSubmitting(false);
     }
   };
+  
+  const handleVerificationSuccess = () => {
+    // Redirect to dashboard after successful verification
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 2000);
+  };
+
+  if (requiresVerification) {
+    return <EmailVerification email={userEmail} onVerificationSuccess={handleVerificationSuccess} />;
+  }
 
   return (
     <Container maxWidth="sm">

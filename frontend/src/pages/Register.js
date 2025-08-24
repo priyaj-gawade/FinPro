@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import EmailVerification from '../components/EmailVerification';
 import {
   Container,
   Box,
@@ -12,8 +13,10 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { AccountBalance as AccountBalanceIcon } from '@mui/icons-material';
+import { useTranslation } from '../i18n/i18n';
 
 const Register = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,6 +25,8 @@ const Register = () => {
   });
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   const { register, error } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -53,14 +58,31 @@ const Register = () => {
     try {
       setIsSubmitting(true);
       const { name, email, password } = formData;
-      await register({ name, email, password });
-      navigate('/');
+      const response = await register({ name, email, password });
+      
+      if (response && response.requiresVerification) {
+        setUserEmail(email);
+        setRegistrationComplete(true);
+      } else {
+        navigate('/login');
+      }
     } catch (err) {
       setFormError(err.response?.data?.message || 'Registration failed');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const handleVerificationSuccess = () => {
+    // Redirect to login page after successful verification
+    setTimeout(() => {
+      navigate('/login');
+    }, 2000);
+  };
+
+  if (registrationComplete) {
+    return <EmailVerification email={userEmail} onVerificationSuccess={handleVerificationSuccess} />;
+  }
 
   return (
     <Container maxWidth="sm">
@@ -140,6 +162,7 @@ const Register = () => {
               label="Confirm Password"
               type="password"
               id="confirmPassword"
+              autoComplete="new-password"
               value={formData.confirmPassword}
               onChange={handleChange}
             />
@@ -153,12 +176,11 @@ const Register = () => {
               {isSubmitting ? <CircularProgress size={24} /> : 'Register'}
             </Button>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="body2">
-                Already have an account?{' '}
-                <Link to="/login" style={{ textDecoration: 'none' }}>
-                  Login here
-                </Link>
-              </Typography>
+              <Link to="/login" style={{ textDecoration: 'none' }}>
+                <Typography variant="body2" color="primary">
+                  Already have an account? Login
+                </Typography>
+              </Link>
             </Box>
           </Box>
         </Paper>

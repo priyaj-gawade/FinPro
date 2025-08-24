@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '../i18n/i18n';
 
 const LanguageSelector = () => {
   const { t, i18n } = useTranslation();
@@ -19,6 +19,9 @@ const LanguageSelector = () => {
         <option value="en">{t('english')}</option>
         <option value="hi">{t('hindi')}</option>
         <option value="mr">{t('marathi')}</option>
+        <option value="bn">{t('bengali')}</option>
+        <option value="ta">{t('tamil')}</option>
+        <option value="pa">{t('punjabi')}</option>
       </select>
     </div>
   );

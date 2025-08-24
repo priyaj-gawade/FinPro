@@ -14,10 +14,28 @@ const UserSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  phone: {
+    type: String,
+    trim: true
+  },
   password: {
     type: String,
     required: true,
     minlength: 6
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  otpCode: {
+    type: String
+  },
+  otpExpires: {
+    type: Date
   },
   createdAt: {
     type: Date,

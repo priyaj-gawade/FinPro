@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// Use hardcoded localhost URL for direct connection
 const API_URL = 'http://localhost:5000/api';
 
 // Create axios instance with base URL
@@ -24,6 +25,8 @@ const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   login: (userData) => api.post('/auth/login', userData),
   getUser: () => api.get('/auth/user'),
+  sendOtp: (data) => api.post('/auth/send-otp', data),
+  verifyOtp: (data) => api.post('/auth/verify-otp', data),
 };
 
 // Transactions API

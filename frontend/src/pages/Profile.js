@@ -1,23 +1,28 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { useTranslation } from '../i18n/i18n';
+import { authAPI } from '../services/api';
+import PhoneVerification from '../components/PhoneVerification';
 import {
-  Container,
-  Grid,
-  Paper,
-  Typography,
   Box,
-  Avatar,
   Button,
-  TextField,
-  Alert,
-  CircularProgress,
-  Divider,
   Card,
   CardContent,
+  CircularProgress,
+  Divider,
+  Grid,
+  TextField,
+  Typography,
+  useTheme,
+  Alert,
+  Paper,
+  Avatar
 } from '@mui/material';
 import { Person as PersonIcon } from '@mui/icons-material';
 
 const Profile = () => {
+  const { t, i18n } = useTranslation();
   const { user, logout } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -105,10 +110,10 @@ const Profile = () => {
               </Avatar>
               <Box>
                 <Typography variant="h4" gutterBottom fontWeight="bold">
-                  Profile
+                  {t('profile')}
                 </Typography>
                 <Typography variant="body1">
-                  Manage your account information and security settings
+                  {t('profile_description')}
                 </Typography>
               </Box>
             </Box>
@@ -136,7 +141,7 @@ const Profile = () => {
               {/* Account Information Section */}
               <Grid item xs={12}>
                 <Typography variant="h5" gutterBottom fontWeight="medium">
-                  Account Information
+                  {t('personal_information')}
                 </Typography>
               </Grid>
               
@@ -165,6 +170,18 @@ const Profile = () => {
                   variant="outlined"
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
+              </Grid>
+
+              {/* Phone Verification Section */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h5" gutterBottom fontWeight="medium" sx={{ mt: 2 }}>
+                  Phone Verification
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <PhoneVerification />
               </Grid>
 
               {/* Password Section */}

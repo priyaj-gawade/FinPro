@@ -1,11 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
+// i18n
+import i18n from './i18n/i18n';
+
 // Custom Theme Context
 import { ThemeProvider } from './context/ThemeContext';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 
 // Components
 import Navbar from './components/layout/Navbar';
@@ -39,13 +43,14 @@ const RedirectIfAuthenticated = ({ children }) => {
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+    <LanguageProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Layout>
@@ -67,10 +72,11 @@ function App() {
                 </Layout>
               </ProtectedRoute>
             } />
-          </Routes>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+            </Routes>
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
 

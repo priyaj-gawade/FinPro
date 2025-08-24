@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../i18n/i18n';
 import { transactionsAPI } from '../services/api';
 import {
   Container,
@@ -56,6 +57,7 @@ import {
 } from '@mui/icons-material';
 
 const Transactions = () => {
+  const { t } = useTranslation();
   // Function to get the appropriate icon for each category
   const getCategoryIcon = (category) => {
     switch(category) {
@@ -192,7 +194,9 @@ const Transactions = () => {
       const recognition = new window.webkitSpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'en-US';
+      // Set language based on current UI language
+      const currentLang = t('locale') || 'en-US';
+      recognition.lang = currentLang;
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -221,19 +225,27 @@ const Transactions = () => {
   const processVoiceCommand = (command) => {
     console.log('Voice command:', command);
     
-    // Process add transaction commands
-    if (command.includes('add') || command.includes('create') || command.includes('new')) {
+    // Process add transaction commands in multiple languages
+    // English commands
+    if (command.includes('add') || command.includes('create') || command.includes('new') ||
+        // Hindi commands
+        command.includes('जोड़ें') || command.includes('बनाएं') || command.includes('नया') ||
+        // Marathi commands
+        command.includes('जोडा') || command.includes('तयार करा') || command.includes('नवीन')) {
       // Open the dialog
       handleOpenDialog();
       
       // Try to extract transaction details
-      const amountMatch = command.match(/₹(\d+(\.\d+)?)/) || command.match(/(\d+(\.\d+)?) rupees/);
+      const amountMatch = command.match(/₹(\d+(\.\d+)?)/) || command.match(/(\d+(\.\d+)?) rupees/) ||
+                         command.match(/(\d+(\.\d+)?) रुपये/) || command.match(/(\d+(\.\d+)?) रुपए/);
       if (amountMatch) {
         setFormData(prev => ({ ...prev, amount: amountMatch[1] }));
       }
       
-      // Check for expense or income
-      if (command.includes('income') || command.includes('earning') || command.includes('salary')) {
+      // Check for expense or income in multiple languages
+      if (command.includes('income') || command.includes('earning') || command.includes('salary') ||
+          command.includes('आय') || command.includes('कमाई') || command.includes('वेतन') ||
+          command.includes('उत्पन्न') || command.includes('पगार')) {
         setFormData(prev => ({ ...prev, type: 'income' }));
       }
       
@@ -245,9 +257,20 @@ const Transactions = () => {
       });
       
       // Extract description
-      const descriptionMatch = command.match(/for ([^₹]+)/);
+      const descriptionMatch = command.match(/for ([^₹]+)/) || command.match(/के लिए ([^₹]+)/) || command.match(/साठी ([^₹]+)/);
       if (descriptionMatch) {
         setFormData(prev => ({ ...prev, description: descriptionMatch[1].trim() }));
+      }
+    } else if (command.toLowerCase().includes('filter') || 
+               command.toLowerCase().includes('फ़िल्टर') || 
+               command.toLowerCase().includes('छानें') || 
+               command.toLowerCase().includes('फिल्टर') || 
+               command.toLowerCase().includes('निवडा')) {
+      // Show filters section
+      // This would be implemented if we had filter state management
+      const filterSection = document.querySelector('.MuiCardContent-root');
+      if (filterSection) {
+        filterSection.scrollIntoView({ behavior: 'smooth' });
       }
     }
   };
@@ -293,11 +316,11 @@ const Transactions = () => {
                 <CurrencyRupeeIcon fontSize="large" />
               </Avatar>
               <Typography variant="h4" fontWeight="bold">
-                Transactions
+                {t('transactions')}
               </Typography>
             </Box>
             <Typography variant="body1" sx={{ opacity: 0.9, maxWidth: 600, mb: 1 }}>
-              Manage your income and expenses. Add, edit, or delete transactions and filter by type, category, or date.
+              {t('transactions_description')}
             </Typography>
           </Grid>
           <Grid item xs={12} md={4} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
@@ -330,7 +353,7 @@ const Transactions = () => {
                 transition: 'all 0.2s',
               }}
             >
-              Add Transaction
+              {t('add_transaction')}
             </Button>
           </Grid>
         </Grid>
@@ -343,14 +366,14 @@ const Transactions = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                 <FilterListIcon sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant="h6" fontWeight="bold">Filters</Typography>
+                <Typography variant="h6" fontWeight="bold">{t('filter_transactions')}</Typography>
               </Box>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6} md={3}>
                   <TextField
                     select
                     fullWidth
-                    label="Type"
+                    label={t('type')}
                     variant="outlined"
                     size="small"
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
@@ -364,7 +387,7 @@ const Transactions = () => {
                   <TextField
                     select
                     fullWidth
-                    label="Category"
+                    label={t('category')}
                     variant="outlined"
                     size="small"
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}

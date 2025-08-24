@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { useTranslation } from '../i18n/i18n';
 import { transactionsAPI, aiAPI } from '../services/api';
 import {
   Container,
@@ -45,6 +46,7 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [categories, setCategories] = useState(null);
@@ -100,7 +102,10 @@ const Dashboard = () => {
       const recognition = new window.webkitSpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'en-US';
+      
+      // Set language based on current UI language
+      const currentLang = t('locale') || 'en-US';
+      recognition.lang = currentLang;
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -109,6 +114,22 @@ const Dashboard = () => {
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setAiQuery(transcript);
+        
+        // Process language-specific voice commands
+        if (transcript.toLowerCase().includes('add transaction') || 
+            transcript.toLowerCase().includes('new transaction') ||
+            transcript.includes('लेनदेन जोड़ें') || transcript.includes('नया लेनदेन') ||
+            transcript.includes('व्यवहार जोडा') || transcript.includes('नवीन व्यवहार')) {
+          window.location.href = '/transactions/add';
+          return;
+        } else if (transcript.toLowerCase().includes('show transactions') || 
+                   transcript.toLowerCase().includes('view transactions') ||
+                   transcript.includes('लेनदेन दिखाएं') || transcript.includes('लेनदेन देखें') ||
+                   transcript.includes('व्यवहार दाखवा') || transcript.includes('व्यवहार पहा')) {
+          window.location.href = '/transactions';
+          return;
+        }
+        
         // Automatically submit after voice input
         setTimeout(() => {
           handleAiQuerySubmit();
@@ -191,15 +212,15 @@ const Dashboard = () => {
               </Avatar>
               <Box>
                 <Typography variant="h4" fontWeight="bold" sx={{ mb: 0.5 }}>
-                  Welcome, {user?.name || 'User'}!
+                  {t('welcome')}, {user?.name || t('user')}!
                 </Typography>
                 <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  {new Date().toLocaleDateString(t('locale') || 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </Typography>
               </Box>
             </Box>
             <Typography variant="body1" sx={{ mt: 2, opacity: 0.9, maxWidth: '90%' }}>
-              Here's your financial overview. Track your spending, monitor your budget, and get personalized insights to improve your financial health.
+              {t('dashboard.overview')}
             </Typography>
           </Grid>
           <Grid item xs={12} md={4} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
@@ -220,7 +241,7 @@ const Dashboard = () => {
                 borderRadius: 2,
               }}
             >
-              Ask AI Assistant
+              {t('ask_ai_assistant')}
             </Button>
           </Grid>
         </Grid>
@@ -230,7 +251,7 @@ const Dashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12}>
           <Typography variant="h5" fontWeight="medium" sx={{ mb: 2 }}>
-            Financial Summary
+            {t('financial_summary')}
           </Typography>
         </Grid>
         <Grid item xs={12} md={4}>
@@ -243,13 +264,13 @@ const Dashboard = () => {
                 <Avatar sx={{ bgcolor: 'primary.light', mr: 2 }}>
                   <AccountBalanceIcon />
                 </Avatar>
-                <Typography variant="h6" fontWeight="medium">Balance</Typography>
+                <Typography variant="h6" fontWeight="medium">{t('balance')}</Typography>
               </Box>
               <Typography variant="h4" fontWeight="bold" sx={{ my: 2 }}>₹{summary?.balance.toFixed(2) || '0.00'}</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 <Chip 
                   size="small" 
-                  label="Current Balance" 
+                  label={t('current_balance')} 
                   sx={{ 
                     bgcolor: 'primary.light', 
                     color: 'white',
@@ -257,7 +278,7 @@ const Dashboard = () => {
                   }} 
                 />
                 <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                  Updated today
+                  {t('updated_today')}
                 </Typography>
               </Box>
             </CardContent>
@@ -274,7 +295,7 @@ const Dashboard = () => {
                 <Avatar sx={{ bgcolor: 'success.light', mr: 2 }}>
                   <TrendingUpIcon />
                 </Avatar>
-                <Typography variant="h6" fontWeight="medium">Income</Typography>
+                <Typography variant="h6" fontWeight="medium">{t('income')}</Typography>
               </Box>
               <Typography variant="h4" color="success.main" fontWeight="bold" sx={{ my: 2 }}>
                 ₹{summary?.totalIncome.toFixed(2) || '0.00'}
@@ -282,7 +303,7 @@ const Dashboard = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 <Chip 
                   size="small" 
-                  label="Monthly Total" 
+                  label={t('monthly_total')} 
                   sx={{ 
                     bgcolor: 'success.light', 
                     color: 'white',
@@ -290,7 +311,7 @@ const Dashboard = () => {
                   }} 
                 />
                 <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                  This month
+                  {t('this_month')}
                 </Typography>
               </Box>
             </CardContent>
@@ -307,7 +328,7 @@ const Dashboard = () => {
                 <Avatar sx={{ bgcolor: 'error.light', mr: 2 }}>
                   <TrendingDownIcon />
                 </Avatar>
-                <Typography variant="h6" fontWeight="medium">Expenses</Typography>
+                <Typography variant="h6" fontWeight="medium">{t('expenses')}</Typography>
               </Box>
               <Typography variant="h4" color="error.main" fontWeight="bold" sx={{ my: 2 }}>
                 ₹{summary?.totalExpenses.toFixed(2) || '0.00'}
@@ -315,7 +336,7 @@ const Dashboard = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 <Chip 
                   size="small" 
-                  label="Monthly Total" 
+                  label={t('monthly_total')} 
                   sx={{ 
                     bgcolor: 'error.light', 
                     color: 'white',
@@ -323,7 +344,7 @@ const Dashboard = () => {
                   }} 
                 />
                 <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                  This month
+                  {t('this_month')}
                 </Typography>
               </Box>
             </CardContent>
@@ -335,7 +356,7 @@ const Dashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12}>
           <Typography variant="h5" gutterBottom fontWeight="medium">
-            Financial Analytics
+            {t('financial_analytics')}
           </Typography>
         </Grid>
         
@@ -343,7 +364,7 @@ const Dashboard = () => {
         <Grid item xs={12} md={6}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>Expense Distribution</Typography>
+              <Typography variant="h6" gutterBottom>{t('expense_distribution')}</Typography>
               <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {chartData && chartData.expenseData.some(val => val > 0) ? (
                   <Doughnut
@@ -381,7 +402,7 @@ const Dashboard = () => {
         <Grid item xs={12} md={6}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>Income vs Expenses by Category</Typography>
+              <Typography variant="h6" gutterBottom>{t('income_vs_expenses')}</Typography>
               <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 {chartData && (chartData.incomeData.some(val => val > 0) || chartData.expenseData.some(val => val > 0)) ? (
                   <Bar
@@ -443,7 +464,7 @@ const Dashboard = () => {
         <Grid item xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h5" fontWeight="medium">
-              Recent Transactions
+              {t('recent_transactions')}
             </Typography>
             <Button 
               variant="outlined" 
@@ -464,11 +485,11 @@ const Dashboard = () => {
                   <Table sx={{ minWidth: 650 }}>
                     <TableHead>
                       <TableRow>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Category</TableCell>
-                        <TableCell>Description</TableCell>
-                        <TableCell align="right">Amount</TableCell>
+                        <TableCell>{t('date')}</TableCell>
+                        <TableCell>{t('type')}</TableCell>
+                        <TableCell>{t('category')}</TableCell>
+                        <TableCell>{t('description')}</TableCell>
+                        <TableCell align="right">{t('amount')}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>

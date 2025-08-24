@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const fetch = require('node-fetch');
+const Transaction = require('../models/Transaction');
 
 // API constants
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
@@ -23,20 +24,30 @@ router.post('/query', auth, async (req, res) => {
 
     console.log('Processing AI query:', query);
 
+    // Handle transaction-related queries
+    const transactionResponse = await handleTransactionQuery(query, req.user.id);
+    if (transactionResponse) {
+      return res.json({ response: transactionResponse });
+    }
+
     // Get language preference from request (default to English)
     const language = req.body.language || 'en';
     
     // Create system prompt with formatting instructions and language support
-    const systemPrompt = `You are a helpful financial assistant. 
-    
-Please follow these formatting guidelines in your responses:
-1. Use proper paragraphs with clear spacing between ideas
-2. Use bullet points or numbered lists for multiple items
-3. Use headings (with ** for bold) to organize sections
-4. Keep sentences concise and clear
-5. Respond in the ${language} language
+    const systemPrompt = `You are a helpful financial assistant.
 
-For financial advice, structure your response with clear sections like "Summary", "Analysis", and "Recommendations".`;
+**Quick Actions**:
+- To add income, type: \`add, [category], [amount]\`
+- To add an expense, type: \`sub, [category], [amount]\`
+
+Please provide responses in a clean, readable format. Follow these guidelines:
+1.  Start with a concise summary of no more than three lines.
+2.  Follow the summary with actionable recommendations in a bulleted or numbered list.
+3.  Each bullet point or numbered item must start on a new line.
+4.  Use simple paragraphs with clear spacing.
+5.  Do not use markdown formatting like '*' for bold or '#' for headings.
+6.  Keep sentences grammatically correct and easy to understand.
+7.  Respond in the ${language} language.`;
 
     // Use OpenRouter API with DeepSeek R1 model
     const response = await fetch(OPENROUTER_API_URL, {
@@ -53,6 +64,7 @@ For financial advice, structure your response with clear sections like "Summary"
           { role: "system", content: systemPrompt },
           { role: "user", content: query }
         ],
+        max_tokens: 150,
         stream: false
       }),
     });
@@ -91,25 +103,31 @@ router.post('/finance-advice', auth, async (req, res) => {
     // Format transactions for AI
     const formattedTransactions = transactions.map(t => 
       `${t.date.substring(0, 10)} | ${t.amount} | ${t.type} | ${t.category} | ${t.description}`
-    ).join('\n');
+    ).join('\\n');
 
     // Get language preference from request (default to English)
     const language = req.body.language || 'en';
     
     // Create system prompt with formatting instructions and language support
-    const systemPrompt = `You are a helpful financial assistant. 
-    
-Please follow these formatting guidelines in your responses:
-1. Use proper paragraphs with clear spacing between ideas
-2. Use bullet points or numbered lists for multiple items
-3. Use headings (with ** for bold) to organize sections
-4. Keep sentences concise and clear
-5. Respond in the ${language} language
+    const systemPrompt = `You are a helpful financial assistant and will reply in input language.
 
-For financial advice, structure your response with clear sections like "Summary", "Analysis", and "Recommendations".`;
+**Quick Actions**:
+- To add income, type: \`add, [category], [amount]\`
+- To add an expense, type: \`sub, [category], [amount]\`
+
+Please provide responses in a clean, readable format. Follow these guidelines:
+1.  Start with a concise summary of no more than three lines.
+2.  Follow the summary with actionable recommendations in a bulleted or numbered list.
+3.  Each bullet point or numbered item must start on a new line.
+4.  Use simple paragraphs with clear spacing.
+5.  Do not use markdown formatting like '*' for bold or '#' for headings.
+6.  Keep sentences grammatically correct and easy to understand.
+7.  Respond in the ${language} language.
+
+When giving financial advice, use clear headings like "Summary:", "Analysis:", and "Recommendations:" on their own lines.`;
 
     // Create prompt for AI
-    const prompt = `Based on these transactions:\n${formattedTransactions}\n\nQuestion: ${question}\n\nPlease provide financial advice:`;
+    const prompt = `Based on these transactions:\\n${formattedTransactions}\\n\\nQuestion: ${question}\\n\\nPlease provide financial advice:`;
 
     // Use OpenRouter API with DeepSeek R1 model
     const response = await fetch(OPENROUTER_API_URL, {
@@ -126,7 +144,7 @@ For financial advice, structure your response with clear sections like "Summary"
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 1500,
+        max_tokens: 150,
         temperature: 0.7,
         stream: false
       }),
@@ -151,5 +169,48 @@ For financial advice, structure your response with clear sections like "Summary"
     res.status(500).json({ message: 'Error processing your request', error: error.message });
   }
 });
+
+async function handleTransactionQuery(query, userId) {
+  const lowerCaseQuery = query.toLowerCase().trim();
+  
+  // Split by comma and then trim each part.
+  const parts = lowerCaseQuery.split(',').map(p => p.trim());
+  const action = parts[0];
+
+  if (action === 'add' || action === 'sub') {
+    const type = action === 'add' ? 'income' : 'expense';
+
+    let category = parts.length > 1 ? parts[1] : null;
+    let amountStr = parts.length > 2 ? parts[2] : null;
+
+    if (!category || category === '') {
+      return `Please provide a category for this ${type}. For example: '${action}, [category], [amount]'.`;
+    }
+    if (!amountStr || amountStr === '') {
+      return `Please provide an amount for the '${category}' ${type}. For example: '${action}, ${category}, [amount]'.`;
+    }
+
+    const amount = parseFloat(amountStr.replace(/[^\\d.]/g, ''));
+
+    if (isNaN(amount) || amount <= 0) {
+      return 'Invalid amount. Please provide a valid positive number.';
+    }
+    
+    // All parameters are present, create transaction
+    const newTransaction = new Transaction({
+      user: userId,
+      amount,
+      type,
+      category: category,
+      description: `${type.charAt(0).toUpperCase() + type.slice(1)} of ${amount} for ${category}`
+    });
+
+    await newTransaction.save();
+    return `Transaction recorded: ${type} of ${amount} for ${category}.`;
+  }
+
+  // If it's not a transaction command, return null to proceed with normal AI query.
+  return null;
+}
 
 module.exports = router;

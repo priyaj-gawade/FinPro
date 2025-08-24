@@ -2,7 +2,8 @@ import React, { useContext, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { ThemeContext } from '../../context/ThemeContext';
-import { useTranslation } from '../../i18n/mockI18n';
+import { LanguageContext } from '../../context/LanguageContext';
+import { useTranslation } from '../../i18n/i18n';
 import {
   AppBar,
   Box,
@@ -31,19 +32,13 @@ import logo from '../../assets/logo.svg';
 const Navbar = () => {
   const { isAuthenticated, logout, user } = useContext(AuthContext);
   const { mode, toggleThemeMode } = useContext(ThemeContext);
+  const { language, changeLanguage } = useContext(LanguageContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [anchorEl, setAnchorEl] = useState(null);
   const [isListening, setIsListening] = useState(false);
   const isDarkMode = mode === 'dark';
   const { t, i18n } = useTranslation();
-  
-  const changeLanguage = (lng) => {
-    // Set language directly in localStorage
-    localStorage.setItem('language', lng);
-    // Force page reload to apply changes
-    window.location.reload();
-  };
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -64,7 +59,9 @@ const Navbar = () => {
       const recognition = new window.webkitSpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'en-US';
+      // Set language based on current UI language
+      const currentLang = t('locale') || 'en-US';
+      recognition.lang = currentLang;
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -92,16 +89,42 @@ const Navbar = () => {
 
   const processVoiceCommand = (command) => {
     console.log('Voice command:', command);
+    const currentLang = i18n.language;
     
-    // Simple command processing
-    if (command.includes('dashboard') || command.includes('home')) {
-      navigate('/dashboard');
-    } else if (command.includes('transactions') || command.includes('expenses')) {
-      navigate('/transactions');
-    } else if (command.includes('profile') || command.includes('account')) {
-      navigate('/profile');
-    } else if (command.includes('logout') || command.includes('sign out')) {
-      handleLogout();
+    // Language-specific command processing
+    if (currentLang === 'en') {
+      // English commands
+      if (command.includes('dashboard') || command.includes('home')) {
+        navigate('/dashboard');
+      } else if (command.includes('transactions') || command.includes('expenses')) {
+        navigate('/transactions');
+      } else if (command.includes('profile') || command.includes('account')) {
+        navigate('/profile');
+      } else if (command.includes('logout') || command.includes('sign out')) {
+        handleLogout();
+      }
+    } else if (currentLang === 'hi') {
+      // Hindi commands
+      if (command.includes('डैशबोर्ड') || command.includes('होम')) {
+        navigate('/dashboard');
+      } else if (command.includes('लेनदेन') || command.includes('व्यय')) {
+        navigate('/transactions');
+      } else if (command.includes('प्रोफाइल') || command.includes('अकाउंट')) {
+        navigate('/profile');
+      } else if (command.includes('लॉगआउट') || command.includes('साइन आउट')) {
+        handleLogout();
+      }
+    } else if (currentLang === 'mr') {
+      // Marathi commands
+      if (command.includes('डॅशबोर्ड') || command.includes('होम')) {
+        navigate('/dashboard');
+      } else if (command.includes('व्यवहार') || command.includes('खर्च')) {
+        navigate('/transactions');
+      } else if (command.includes('प्रोफाइल') || command.includes('खाते')) {
+        navigate('/profile');
+      } else if (command.includes('लॉगआउट') || command.includes('साइन आउट')) {
+        handleLogout();
+      }
     }
   };
 
@@ -165,7 +188,7 @@ const Navbar = () => {
                     boxShadow: location.pathname === '/dashboard' ? 1 : 0
                   }}
                 >
-                  Dashboard
+                  {t('dashboard')}
                 </Button>
                 <Button
                   component={Link}
@@ -183,7 +206,7 @@ const Navbar = () => {
                     boxShadow: location.pathname === '/transactions' ? 1 : 0
                   }}
                 >
-                  Transactions
+                  {t('transactions')}
                 </Button>
                 <Button
                   component={Link}
@@ -201,7 +224,7 @@ const Navbar = () => {
                     boxShadow: location.pathname === '/profile' ? 1 : 0
                   }}
                 >
-                  Profile
+                  {t('profile')}
                 </Button>
                 
 
@@ -244,7 +267,7 @@ const Navbar = () => {
                   </Typography>
                   <select
                     onChange={(e) => changeLanguage(e.target.value)}
-                    value={i18n.language}
+                    value={language}
                     style={{ 
                       padding: '4px', 
                       borderRadius: '4px',
@@ -328,7 +351,7 @@ const Navbar = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <DashboardIcon sx={{ color: location.pathname === '/dashboard' ? 'primary.main' : 'text.secondary' }} />
                       <Typography sx={{ ml: 1.5, fontWeight: location.pathname === '/dashboard' ? 'medium' : 'regular' }}>
-                        Dashboard
+                        {t('dashboard')}
                       </Typography>
                     </Box>
                   </MenuItem>
@@ -346,7 +369,7 @@ const Navbar = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Box component="img" src={logo} alt="FinTooz Logo" sx={{ height: 20, width: 20, color: location.pathname === '/transactions' ? 'primary.main' : 'text.secondary' }} />
                       <Typography sx={{ ml: 1.5, fontWeight: location.pathname === '/transactions' ? 'medium' : 'regular' }}>
-                        Transactions
+                        {t('transactions')}
                       </Typography>
                     </Box>
                   </MenuItem>
@@ -364,7 +387,7 @@ const Navbar = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <PersonIcon sx={{ color: location.pathname === '/profile' ? 'primary.main' : 'text.secondary' }} />
                       <Typography sx={{ ml: 1.5, fontWeight: location.pathname === '/profile' ? 'medium' : 'regular' }}>
-                        Profile
+                        {t('profile')}
                       </Typography>
                     </Box>
                   </MenuItem>
